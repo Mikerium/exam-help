@@ -1,0 +1,127 @@
+const years = [1900,1910,1920,1930,1940,1950,1960,1970,1980,1990,2000];
+let dataArray = [];
+let chartNames = [];
+let lineChart;
+let chart;
+let currname;
+
+google.charts.load('current', {packages: ['corechart', 'line']});
+google.charts.setOnLoadCallback(setUpGraph);
+
+
+function setUpGraph() {
+    chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+    lineChart = new google.visualization.DataTable();
+    lineChart.addColumn('number', 'Year');
+    lineChart.addRows(years.length);
+    years.forEach(function (value, index) {
+        lineChart.setCell(index, 0, value);
+    });
+}
+
+function drawGraph() {
+    //todo: TWEAK THIS
+    //todo: get bootstrap loaded
+    let options = {
+        hAxis: {
+            title: 'Year'
+        },
+        vAxis: {
+            title: 'Popularity'
+        }
+    };
+
+    if (lineChart.getNumberOfColumns() > 1) {
+        chart.draw(lineChart, options);
+    }
+
+}
+
+
+$(document).ready(() => {
+    // set a listener on the textbox
+    $('#input').on("change", (evt) => {
+        let text = $('#input').val();
+        // the {text: text} sends a parameter named text with the
+        $.get('/namelookup', {text: text})
+            .done((data) => {
+
+            console.log(data);
+
+                if (data['result'] == "***DB ERROR2***" || data['result'] =="***DB ERROR***") {
+                    alert(["Name either does not exist or there has been an input error, please try again."]);
+                    $('#input').val('');
+                    return(null);
+                }
+
+                let yearData = [];
+                let combData = [];
+               currname = data.name;
+
+                //populates yearData with the data associated with years
+                for(let i in years){
+                    yearData.push(data[years[i]])
+                }
+
+                //changes any 0 value to 1001
+                for(let i in yearData){
+                    if (yearData[i] == 0){
+                        yearData[i] = 1001;
+                    }
+                }
+
+                //combines year and its value for chart
+                for(let i in years){
+                    combData.push([years[i],yearData[i]])
+                }
+
+               // updateChartNames(currname);
+                updateChartNames(currname);
+                updateArray(combData);
+
+                addLine(data);
+
+
+                //adds new chart array to dataArray
+
+                console.log(dataArray);
+
+
+                $('#input').val('');   // reset the textbox
+
+            })
+            .fail((xhr) => {
+                alert('Problem contacting server');
+                console.log(xhr);
+            });
+    });
+});
+
+function updateChartNames(currname){
+    chartNames.push(currname);
+}
+
+function updateArray(combData){
+    dataArray.push(combData);
+}
+
+
+
+
+function addLine(data) {
+    lineChart.addColumn('number', data['name']);
+
+   let colNum = lineChart.getNumberOfColumns() - 1;
+
+   let test = data[years];
+   console.log(test);
+
+
+    dataArray.map(String).forEach((years, index) =>{
+        lineChart.setCell(index, colNum, data[years]);
+    });
+
+    drawGraph();
+}
+
+
